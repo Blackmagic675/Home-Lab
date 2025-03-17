@@ -4,55 +4,25 @@ mqtt:
   host: 192.168.1.72
   port: 1883
   user: admin
-  password: Nottelling
-
-detectors:
-  cpu1:
-    type: cpu
-  cpu2:
-    type: cpu
-
-detect:
-  enabled: true
-  width: 2304
-  height: 1296
-
-objects:
-  track:
-    - person
-    - car
-
-motion:
-  enabled: true
-
-record:
-  enabled: true
-  retain:
-    days: 0
-    mode: motion
-  alerts:
-    retain:
-      days: 1
-      mode: active_objects
-  detections:
-    retain:
-      days: 1
-      mode: active_objects
-
-snapshots:
-  enabled: true
-  bounding_box: true
-  quality: 70
-  retain:
-    default: 1
+  password: Nottelling01
 
 go2rtc:
   streams:
     driveway:
       - ffmpeg:rtsp://karlpthomas:Nottelling01@192.168.1.6:554/stream1
       - ffmpeg:driveway#audio=acc
+    driveway_sub:
+      - ffmpeg:rtsp://karlpthomas:Nottelling01@192.168.1.6:554/stream2
+      - ffmpeg:driveway#audio=acc
+    tapo:
+      - ffmpeg:rtsp://karlpthomas:Nottelling01@192.168.1.34:554/stream1
+      - ffmpeg:driveway#audio=acc
+    tapo_sub:
+      - ffmpeg:rtsp://karlpthomas:Nottelling01@192.168.1.34:554/stream2
+      - ffmpeg:driveway#audio=acc
 
 cameras:
+  # Start of Driveway Camera
   driveway:
     enabled: true
     ffmpeg:
@@ -62,8 +32,13 @@ cameras:
         - path: rtsp://127.0.0.1:8554/driveway
           input_args: preset-rtsp-restream
           roles:
-            - detect
             - record
+        - path: rtsp://127.0.0.1:8554/driveway_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+
+    #ONVIF Settings    
     onvif:
       host: 192.168.1.6
       port: 2020
@@ -76,8 +51,10 @@ cameras:
         zooming: disabled
         track:
           - person
-        return_preset: preset1
+        return_preset: preset1s
         timeout: 10
+
+    # MQTT Settings
     mqtt:
       enabled: true
       timestamp: false
@@ -85,56 +62,192 @@ cameras:
       crop: true
       height: 270
       quality: 70
-    zones:
-      pourch_zone:
-        coordinates: 
-          0.228,0.007,0.186,0.361,0.171,0.619,0.076,0.816,0.033,0.611,0.003,0.357,0.003,0.098
-        loitering_time: 0
-        objects: person
-        filters:
-          person:
-            min_area: 5000
-            max_area: 100000
-            threshold: 0.7
-      driveway_zone:
-        coordinates: 
-          0.004,0.925,0.077,0.819,0.172,0.619,0.227,0.467,0.498,0.267,0.666,0.292,0.733,0.327,0.88,0.42,1,0.495,1,1,0.003,0.994
-        loitering_time: 0
-        objects:
-          - car
-          - person
-        filters:
-          person:
-            min_area: 5000
-            max_area: 100000
-            threshold: 0.7
-          car:
-            min_area: 5000
-            max_area: 100000
-            threshold: 0.7
+
+    # Detect Settings
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 10
+
+    # Snapshot Settings
     snapshots:
       enabled: true
+      bounding_box: true
+      quality: 70
       required_zones:
-        - pourch_zone
-        - driveway_zone
+        - driveway_zone # Added Manually
+
+    # Object Settings
     objects:
+      track:
+        - person
+        - car
+        - dog
+        - cat
       filters:
-        car:
-          mask: 0.999,0.486,0.666,0.284,0.536,0.264,0.527,0,1,0
+        person:
+          min_area: 5000
+          max_area: 100000
+          threshold: 0.8
+      mask: 1,0,1,0.479,0.539,0.248,0.55,0.001
+
+    # Record Settings
+    record:
+      enabled: true
+      retain:
+        days: 0
+        mode: motion
+      alerts:
+        retain:
+          days: 1
+          mode: motion
+      detections:
+        retain:
+          days: 1
+          mode: motion
+
+    # Motion Settings
+    motion:
+      enabled: true
+
+    # Review Settings
     review:
       alerts:
         labels:
           - car
           - person
-        required_zones:
-          - driveway_zone
-          - pourch_zone
+        required_zones: driveway_zone
       detections:
         labels:
           - car
           - person
-        required_zones:
-          - driveway_zone
-          - pourch_zone
+        required_zones: driveway_zone
+
+    # Start of configure in settings
+    zones:
+      driveway_zone:
+        coordinates: 
+          0.727,0.355,1,0.487,1,1,0,1,0,0.069,0.096,0.022,0.242,0,0.249,0.21,0.3,0.298,0.536,0.249
+        loitering_time: 0
+        objects:
+          - car
+          - person
+        inertia: 3
+    # End of configure in settings
+  # End of Driveway Camera
+
+  # Start of Driveway Camera
+  driveway:
+    enabled: true
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/driveway
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/driveway_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+
+    #ONVIF Settings    
+    onvif:
+      host: 192.168.1.6
+      port: 2020
+      user: karlpthomas
+      password: Nottelling01
+      tls_insecure: true
+      ignore_time_mismatch: true
+      autotracking:
+        calibrate_on_startup: false
+        zooming: disabled
+        track:
+          - person
+        return_preset: preset1s
+        timeout: 10
+
+    # MQTT Settings
+    mqtt:
+      enabled: true
+      timestamp: false
+      bounding_box: false
+      crop: true
+      height: 270
+      quality: 70
+
+    # Detect Settings
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 10
+
+    # Snapshot Settings
+    snapshots:
+      enabled: true
+      bounding_box: true
+      quality: 70
+      required_zones:
+        - driveway_zone # Added Manually
+
+    # Object Settings
+    objects:
+      track:
+        - person
+        - car
+        - dog
+        - cat
+      filters:
+        person:
+          min_area: 5000
+          max_area: 100000
+          threshold: 0.8
+      mask: 1,0,1,0.479,0.539,0.248,0.55,0.001
+
+    # Record Settings
+    record:
+      enabled: true
+      retain:
+        days: 0
+        mode: motion
+      alerts:
+        retain:
+          days: 1
+          mode: motion
+      detections:
+        retain:
+          days: 1
+          mode: motion
+
+    # Motion Settings
     motion:
-      mask: 1,0.426,0.999,0.002,0.62,0.005,0.618,0.267
+      enabled: true
+
+    # Review Settings
+    review:
+      alerts:
+        labels:
+          - car
+          - person
+        required_zones: driveway_zone
+      detections:
+        labels:
+          - car
+          - person
+        required_zones: driveway_zone
+
+    # Start of configure in settings
+    zones:
+      driveway_zone:
+        coordinates: 
+          0.727,0.355,1,0.487,1,1,0,1,0,0.069,0.096,0.022,0.242,0,0.249,0.21,0.3,0.298,0.536,0.249
+        loitering_time: 0
+        objects:
+          - car
+          - person
+        inertia: 3
+    # End of configure in settings
+  # End of Tapo Camera
