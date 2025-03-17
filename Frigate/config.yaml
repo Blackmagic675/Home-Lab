@@ -1,0 +1,86 @@
+version: 0.15-1
+mqtt:
+  enabled: true
+  host: 192.168.1.72
+  port: 1883
+  user: admin
+  password: Nottelling01
+
+go2rtc:
+  streams:
+    driveway:
+      - ffmpeg:rtsp://karlpthomas:Nottelling01@192.168.1.6:554/stream1
+      - ffmpeg:driveway#audio=acc
+
+cameras:
+# Start of Driveway Camera
+  driveway:
+    enabled: true
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/driveway
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect      
+
+    #ONVIF Settings    
+    onvif:
+      host: 192.168.1.6
+      port: 2020
+      user: karlpthomas
+      password: 'FRIGATE_RTSP_PASSWORD'
+      tls_insecure: true
+      ignore_time_mismatch: true
+      autotracking:
+        calibrate_on_startup: false
+        zooming: disabled
+        track:
+          - person
+        return_preset: preset1
+        timeout: 10
+
+    # MQTT Settings
+    mqtt:
+      enabled: true
+      timestamp: false
+      bounding_box: false
+      crop: true
+      height: 270
+      quality: 70
+    
+    # Detect Settings
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 10
+
+    # Snapshot Settings
+    snapshots:
+      enabled: true
+      bounding_box: true
+      quality: 70
+
+    # Record Settings
+    record:
+      enabled: true
+      retain:
+        days: 0
+        mode: motion
+      alerts:
+        retain:
+          days: 1
+          mode: motion
+      detections:
+        retain:
+          days: 1
+          mode: motion
+    detections:
+        labels:
+          - car
+          - person
+
+# End of Driveway Camera
